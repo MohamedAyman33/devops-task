@@ -1,11 +1,6 @@
 pipeline {
     agent any
     
-    environment {
-        DOCKER_HUB_CREDS = credentials('dockerhub')
-        APP_IMAGE = "m7mdayman/devops-flask-app:${BUILD_NUMBER}"
-    }
-    
     stages {
         stage('Checkout') {
             steps {
@@ -15,18 +10,21 @@ pipeline {
         
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${APP_IMAGE} ."
+                sh "docker build -t m7mdayman/devops-flask-app:latest ."
+            }
+        }
+        
+        stage('Docker Login') {
+            steps {
+                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASSWORD')]) {
+                    sh "docker login -u m7mdayman -p ${DOCKER_PASSWORD}"
+                }
             }
         }
         
         stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', 
-                                 passwordVariable: 'DOCKER_PASSWORD', 
-                                 usernameVariable: 'DOCKER_USERNAME')]) {
-                    sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
-                    sh "docker push ${APP_IMAGE}"
-                }
+                sh "docker push m7mdayman/devops-flask-app:latest"
             }
         }
         
@@ -35,7 +33,7 @@ pipeline {
                 sh """
                 docker stop flask-app || true
                 docker rm flask-app || true
-                docker run -d --name flask-app -p 5000:5000 ${APP_IMAGE}
+                docker run -d --name flask-app -p 5000:5000 m7mdayman/devops-flask-app:latest
                 """
             }
         }
