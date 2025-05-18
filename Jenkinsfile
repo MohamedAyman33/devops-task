@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         DOCKER_HUB_CREDS = credentials('dockerhub')
-        APP_IMAGE = "yourdockerhubusername/devops-flask-app:${BUILD_NUMBER}"
+        APP_IMAGE = "m7mdayman/devops-flask-app:${BUILD_NUMBER}"
     }
     
     stages {
@@ -38,10 +38,15 @@ pipeline {
     }
     
     post {
+        success {
+            echo "Pipeline executed successfully!"
+        }
+        failure {
+            echo "Pipeline failed. Please check the logs for details."
+        }
         always {
-            node {  // This node block is crucial
-                sh "docker logout"
-            }
+            sh "docker logout || true"
+            sh "docker system prune -f || true"  // Clean up unused Docker resources
         }
     }
 }
