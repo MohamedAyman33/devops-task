@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         DOCKER_HUB_CREDS = credentials('dockerhub')
-        APP_IMAGE = " m7mdayman/devops-flask-app:${BUILD_NUMBER}"
+        APP_IMAGE = "yourdockerhubusername/devops-flask-app:${BUILD_NUMBER}"
     }
     
     stages {
@@ -39,7 +39,9 @@ pipeline {
     
     post {
         always {
-            sh "docker logout"
+            node {  // This node block is crucial
+                sh "docker logout"
+            }
         }
     }
 }
