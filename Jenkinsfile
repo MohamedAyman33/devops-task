@@ -21,8 +21,12 @@ pipeline {
         
         stage('Push to Docker Hub') {
             steps {
-                sh "echo ${DOCKER_HUB_CREDS_PSW} | docker login -u ${DOCKER_HUB_CREDS_USR} --password-stdin"
-                sh "docker push ${APP_IMAGE}"
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', 
+                                 passwordVariable: 'DOCKER_PASSWORD', 
+                                 usernameVariable: 'DOCKER_USERNAME')]) {
+                    sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+                    sh "docker push ${APP_IMAGE}"
+                }
             }
         }
         
@@ -35,6 +39,13 @@ pipeline {
                 """
             }
         }
+        
+        stage('Cleanup') {
+            steps {
+                sh "docker logout || true"
+                sh "docker system prune -f || true"
+            }
+        }
     }
     
     post {
@@ -43,10 +54,6 @@ pipeline {
         }
         failure {
             echo "Pipeline failed. Please check the logs for details."
-        }
-        always {
-            sh "docker logout || true"
-            sh "docker system prune -f || true"  // Clean up unused Docker resources
         }
     }
 }
