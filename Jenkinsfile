@@ -1,6 +1,11 @@
 pipeline {
     agent any
     
+    environment {
+        DOCKER_HUB_CREDS = credentials('dockerhub')
+        APP_IMAGE = "m7mdayman/devops-flask-app:${BUILD_NUMBER}"
+    }
+    
     stages {
         stage('Checkout') {
             steps {
@@ -8,21 +13,40 @@ pipeline {
             }
         }
         
-        stage('Info') {
+        stage('Test Docker') {
             steps {
-                sh 'whoami'
-                sh 'ls -la /var/run/docker.sock || echo "Docker socket not accessible"'
-                sh 'id'
+                sh 'docker --version'
+                sh 'docker ps'
             }
         }
         
-        stage('Deploy Simple Flask') {
+        stage('Build Docker Image') {
             steps {
-                sh '''
-                echo "Creating simple Flask app deployment"
-                echo "This would normally involve Docker but we'll simulate it for now"
-                echo "Hello from DevOps!" > index.html
-                '''
+                sh "docker build -t ${APP_IMAGE} ."
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                sh "echo ${DOCKER_HUB_CREDS_PSW} | docker login -u ${DOCKER_HUB_CREDS_USR} --password-stdin"
+                sh "docker push ${APP_IMAGE}"
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                sh """
+                docker stop flask-app || true
+                docker rm flask-app || true
+                docker run -d --name flask-app -p 5000:5000 ${APP_IMAGE}
+                """
+            }
+        }
+        
+        stage('Cleanup') {
+            steps {
+                sh "docker logout || true"
+                sh "docker system prune -f || true"
             }
         }
     }
