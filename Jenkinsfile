@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker:dind'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
     
     stages {
         stage('Checkout') {
@@ -13,31 +8,26 @@ pipeline {
             }
         }
         
-        stage('Build and Push') {
+        stage('Info') {
             steps {
-                sh "docker build -t m7mdayman/devops-flask-app:latest ."
-                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASSWORD')]) {
-                    sh "docker login -u m7mdayman -p ${DOCKER_PASSWORD}"
-                    sh "docker push m7mdayman/devops-flask-app:latest"
-                }
+                sh 'whoami'
+                sh 'ls -la /var/run/docker.sock || echo "Docker socket not accessible"'
+                sh 'id'
             }
         }
         
-        stage('Deploy') {
+        stage('Deploy Simple Flask') {
             steps {
-                sh """
-                docker stop flask-app || true
-                docker rm flask-app || true
-                docker run -d --name flask-app -p 5000:5000 m7mdayman/devops-flask-app:latest
-                """
+                sh '''
+                echo "Creating simple Flask app deployment"
+                echo "This would normally involve Docker but we'll simulate it for now"
+                echo "Hello from DevOps!" > index.html
+                '''
             }
         }
     }
     
     post {
-        always {
-            sh "docker logout || true"
-        }
         success {
             echo "Pipeline executed successfully!"
         }
