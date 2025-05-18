@@ -1,10 +1,6 @@
 pipeline {
     agent any
     
-    environment {
-        // NO credentials declaration here
-    }
-    
     stages {
         stage('Checkout') {
             steps {
@@ -23,7 +19,6 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', 
                                  passwordVariable: 'DOCKER_PASSWORD', 
                                  usernameVariable: 'DOCKER_USERNAME')]) {
-                    // Use proper stdin password handling
                     sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
                     sh 'docker push m7mdayman/devops-flask-app:latest'
                 }
